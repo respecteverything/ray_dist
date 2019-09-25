@@ -6,7 +6,7 @@ import logging
 import json
 import os
 import numpy as np
-
+import timeHistory
 import ray
 import ray.services
 from ray.experimental.sgd import utils
@@ -84,15 +84,13 @@ class TFRunner(object):
         """Runs a training epoch and updates the model parameters."""
         fit_default_config = {"verbose": self.verbose}
         fit_default_config.update(self.config.get("fit_config", {}))
-
-        history = self.model.fit(self.train_dataset, **fit_default_config)
+        time_callback = TimeHistory()
+        history = self.model.fit(self.train_dataset, **fit_default_config, callbacks=[time_callback])
         if history is None:
             stats = {}
         else:
+            print(time_callback.batch_time)
             stats = {"train_" + k: v[-1] for k, v in history.history.items()}
-
-        self.epoch += 1
-        return stats
 
     def validate(self):
         """Evaluates the model on the validation data set."""

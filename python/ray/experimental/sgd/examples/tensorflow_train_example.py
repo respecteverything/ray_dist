@@ -7,6 +7,7 @@ from tensorflow.data import Dataset
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
 import numpy as np
+from tensorflow.keras.applications import resnet50
 
 import ray
 from ray import tune
@@ -29,11 +30,13 @@ def create_config(batch_size):
 
 
 def linear_dataset(a=2, size=1000):
-    x = np.random.rand(size)
-    y = x / 2
-
-    x = x.reshape((-1, 1))
-    y = y.reshape((-1, 1))
+   # x = np.random.rand(size)
+   # y = x / 2
+   #
+   # x = x.reshape((-1, 1))
+   # y = y.reshape((-1, 1))
+    x = np.random.uniform(low=0, high=1, size=[size, 224, 224, 3]).astype(np.float32)
+    y = np.random.randint(low=0, high=1000, size=[size]).astype(np.long)
 
     return x, y
 
@@ -52,15 +55,27 @@ def simple_dataset(config):
     return train_dataset, test_dataset
 
 
+# def simple_model(config):
+#     model = Sequential([Dense(10, input_shape=(1, )), Dense(1)])
+#
+#     model.compile(
+#         optimizer="sgd",
+#         loss="mean_squared_error",
+#         metrics=["mean_squared_error"])
+#
+#     return model
+
 def simple_model(config):
-    model = Sequential([Dense(10, input_shape=(1, )), Dense(1)])
+    model = resnet50.ResNet50(weights=None)
+    # model = Sequential([Dense(10, input_shape=(1, )), Dense(1)])
 
     model.compile(
-        optimizer="sgd",
-        loss="mean_squared_error",
-        metrics=["mean_squared_error"])
+       optimizer="Adam",
+       loss="categorical_crossentropy",
+       metrics=["categorical_crossentropy"])
 
     return model
+
 
 
 def train_example(num_replicas=1, batch_size=128, use_gpu=False):
