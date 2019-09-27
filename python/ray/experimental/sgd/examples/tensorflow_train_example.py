@@ -1,9 +1,9 @@
-from __future__ import absolute_import
+frofrom __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
 import argparse
-from tensorflow.data import Dataset
+import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
 import numpy as np
@@ -12,9 +12,12 @@ from tensorflow.keras.applications import resnet50
 import ray
 from ray import tune
 from ray.experimental.sgd.tf.tf_trainer import TFTrainer, TFTrainable
+from zoo import init_spark_on_yarn, init_spark_on_local
+from zoo.ray.util.raycontext import RayContext
 
-NUM_TRAIN_SAMPLES = 1000
-NUM_TEST_SAMPLES = 400
+
+NUM_TRAIN_SAMPLES = 3000
+NUM_TEST_SAMPLES = 1000
 
 
 def create_config(batch_size):
@@ -46,8 +49,8 @@ def simple_dataset(config):
     x_train, y_train = linear_dataset(size=NUM_TRAIN_SAMPLES)
     x_test, y_test = linear_dataset(size=NUM_TEST_SAMPLES)
 
-    train_dataset = Dataset.from_tensor_slices((x_train, y_train))
-    test_dataset = Dataset.from_tensor_slices((x_test, y_test))
+    train_dataset = tf.data.Dataset.from_tensor_slices((x_train, y_train))
+    test_dataset = tf.data.Dataset.from_tensor_slices((x_test, y_test))
     train_dataset = train_dataset.shuffle(NUM_TRAIN_SAMPLES).repeat().batch(
         batch_size)
     test_dataset = test_dataset.repeat().batch(batch_size)
@@ -85,15 +88,12 @@ def train_example(num_replicas=1, batch_size=128, use_gpu=False):
         num_replicas=num_replicas,
         use_gpu=use_gpu,
         verbose=True,
-        config=create_config(batch_size))
+        config=create_config(batch_sizez))
 
     train_stats1 = trainer.train()
     train_stats1.update(trainer.validate())
     print(train_stats1)
-
-    train_stats2 = trainer.train()
-    train_stats2.update(trainer.validate())
-    print(train_stats2)
+    print("Throughput: " + str(batch_size*num_replicas/train_stats1["batch_time"]))
 
     val_stats = trainer.validate()
     print(val_stats)
@@ -140,9 +140,32 @@ if __name__ == "__main__":
     parser.add_argument(
         "--tune", action="store_true", default=False, help="Tune training")
 
+    parser.add_argument("--hadoop_conf",
+                        type=str,
+                        help="turn on yarn mode by passing the hadoop path"
+                        "configuration folder. Otherwise, turn on local mode.")
+
     args, _ = parser.parse_known_args()
 
-    ray.init(redis_address=args.redis_address)
+    if args.hadoop_conf:
+        sc = init_spark_on_yarn(
+            hadoop_conf=args.hadoop_conf,
+            conda_name="rayexample",
+            num_executor=args.num_replicas,
+            executor_cores=88,
+            executor_memory="10g",
+            driver_memory="3g",
+            driver_cores=4,
+            extra_executor_memory_for_ray="2g")
+        ray_ctx = RayContext(
+            sc=sc,
+            object_store_memory="5g")
+    else:
+        sc = init_spark_on_local(cores=44)
+        ray_ctx = RayContext(sc=sc, object_store_memory="5g")
+    ray_ctx.init()
+
+    #ray.init(redis_address=args.redis_address)
 
     if args.tune:
         tune_example(num_replicas=args.num_replicas, use_gpu=args.use_gpu)

@@ -50,7 +50,7 @@ class TFTrainer(object):
         self.verbose = verbose
 
         # Generate actor class
-        Runner = ray.remote(num_cpus=1, num_gpus=int(use_gpu))(TFRunner)
+        Runner = ray.remote(num_cpus=88, num_gpus=int(use_gpu))(TFRunner)
 
         if num_replicas == 1:
             # Start workers
@@ -84,7 +84,7 @@ class TFTrainer(object):
                 "{ip}:{port}".format(ip=ips[i], port=ports[i])
                 for i in range(len(self.workers))
             ]
-
+            logger.info(urls)
             # Get setup tasks in order to throw errors on failure
             ray.get([
                 worker.setup_distributed.remote(urls, i, len(self.workers))
