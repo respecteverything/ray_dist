@@ -1,4 +1,4 @@
-frofrom __future__ import absolute_import
+from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
@@ -88,7 +88,7 @@ def train_example(num_replicas=1, batch_size=128, use_gpu=False):
         num_replicas=num_replicas,
         use_gpu=use_gpu,
         verbose=True,
-        config=create_config(batch_sizez))
+        config=create_config(batch_size))
 
     train_stats1 = trainer.train()
     train_stats1.update(trainer.validate())
@@ -139,7 +139,8 @@ if __name__ == "__main__":
         help="Enables GPU training")
     parser.add_argument(
         "--tune", action="store_true", default=False, help="Tune training")
-
+    parser.add_argument(
+        "--batch_size", type=int, default=128, help="Tune training")
     parser.add_argument("--hadoop_conf",
                         type=str,
                         help="turn on yarn mode by passing the hadoop path"
@@ -170,4 +171,4 @@ if __name__ == "__main__":
     if args.tune:
         tune_example(num_replicas=args.num_replicas, use_gpu=args.use_gpu)
     else:
-        train_example(num_replicas=args.num_replicas, use_gpu=args.use_gpu)
+        train_example(num_replicas=args.num_replicas, batch_size=args.batch_size, use_gpu=args.use_gpu)

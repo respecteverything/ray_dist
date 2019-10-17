@@ -64,7 +64,7 @@ class DistributedPyTorchRunner(PyTorchRunner):
                 world_size=world_size)
 
     def _setup_training(self):
-        logger.debug("Creating model")
+        logger.info("Creating model")
         self.model = self.model_creator(self.config)
         if torch.cuda.is_available():
             self.model = torch.nn.parallel.DistributedDataParallel(

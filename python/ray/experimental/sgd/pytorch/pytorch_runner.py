@@ -51,18 +51,18 @@ class PyTorchRunner(object):
 
     def setup(self):
         """Initializes the model."""
-        logger.debug("Creating model")
+        logger.info("Creating model")
         self.model = self.model_creator(self.config)
         if torch.cuda.is_available():
             self.model = self.model.cuda()
 
-        logger.debug("Creating optimizer")
+        logger.info("Creating optimizer")
         self.criterion, self.optimizer = self.optimizer_creator(
             self.model, self.config)
         if torch.cuda.is_available():
             self.criterion = self.criterion.cuda()
 
-        logger.debug("Creating dataset")
+        logger.info("Creating dataset")
         self.training_set, self.validation_set = self.data_creator(self.config)
         self.train_loader = torch.utils.data.DataLoader(
             self.training_set,

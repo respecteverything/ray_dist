@@ -87,7 +87,7 @@ class PyTorchTrainer(object):
         else:
             # Geneate actor class
             Runner = ray.remote(
-                num_cpus=1, num_gpus=int(use_gpu))(DistributedPyTorchRunner)
+                num_cpus=88, num_gpus=int(use_gpu))(DistributedPyTorchRunner)
             # Compute batch size per replica
             batch_size_per_replica = batch_size // num_replicas
             if batch_size % num_replicas > 0:
